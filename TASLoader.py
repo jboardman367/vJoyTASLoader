@@ -34,6 +34,7 @@ while 1:
     game = input("\nWhat game to load? \n> ")
 print()
 import traceback
+error_level = 0
 
 class Controller:
     inputs = ('A','B','X','Y','LB','RB','LT','RT','SELECT','START','LSDOWN','RSDOWN','UP','DOWN','LEFT','RIGHT','RSx','RSy','LSx','LSy')
@@ -246,7 +247,7 @@ def load_instructions(filepath:str):
             return create_steps(lines)
 
     except Exception as e:
-        print(f"\nERROR: {traceback.format_exc()}.\n This is most likely an incorrect file path.\n")
+        print(f"\nERROR: {traceback.format_exc() if error_level else e}.\n This is most likely an incorrect file path.\n")
         return None
 
 
@@ -256,7 +257,7 @@ def run_script(script:list):
     try:
         controller = Controller()
     except Exception as e:
-        print("\n ERROR: Could not access controller successfully. Please ensure no vJoy windows are open.\n")
+        print(f"\n ERROR: {traceback.format_exc() if error_level else ''} Could not access controller successfully. Please ensure no vJoy windows are open.\n")
         return
     last_sync_time = perf_counter()
     completed_since_last_sync = 0
@@ -273,7 +274,7 @@ def run_script(script:list):
                     try:
                         last_isEnabled = get_isEnabled()
                     except Exception as e:
-                        print(f"\nEXECUTION ABORTED: Hue.exe could not be found. Please ensure that Hue is open, then restart this program.\n")
+                        print(f"\nEXECUTION ABORTED: {traceback.format_exc() if error_level else ''} Hue.exe could not be found. Please ensure that Hue is open, then restart this program.\n")
                         return
                     slept_at = perf_counter()
                     while True:
@@ -304,7 +305,7 @@ def run_script(script:list):
                 completed_since_last_sync += step[0]
 
         except Exception as e:
-            print(f"\nERROR: Exception \n{traceback.format_exc()}\nwas raised while running the script. (please report this error)\n")
+            print(f"\nERROR: Exception \n{traceback.format_exc() if error_level else e}\nwas raised while running the script.\n")
             break
     controller.reset()
     controller.commit()
@@ -335,7 +336,7 @@ def steam_setup():
         try:
             controller = Controller()
         except Exception as e:
-            print("\n ERROR: Could not access controller successfully. Please ensure no vJoy windows are open.\n")
+            print(f"\n ERROR: {traceback.format_exc() if error_level else ''} Could not access controller successfully. Please ensure no vJoy windows are open.\n")
             return
         controller.set_buttons(A=1); controller.commit()
         sleep(0.1)
@@ -349,7 +350,7 @@ def steam_setup():
     try:
         controller = Controller()
     except Exception as e:
-        print("\n ERROR: Could not access controller successfully. Please ensure no vJoy windows are open.\n")
+        print(f"\n ERROR: {traceback.format_exc() if error_level else ''} Could not access controller successfully. Please ensure no vJoy windows are open.\n")
         return
     for char in (
         ('A', 'Primary Action'), ('B', 'Go back'), ('Y', 'Tertiary Action'), ('X', 'Secondary Action'),
@@ -383,49 +384,55 @@ if __name__ == '__main__':
         'steam_setup' to step through Steam keybinds,
         'help' to get scripting information, 
         'exit' to exit.\n> """)
-        if line.lower() == 'exit': break
+        try:
+            if line.lower() == 'exit': break
 
-        if line.lower()[:4] == 'load':
-            current_script = load_instructions(line[5:])
-            loaded_file = line[5:]
-            if current_script is not None: print('\nScript successfully loaded.\n')
+            if line.lower()[:4] == 'load':
+                current_script = load_instructions(line[5:])
+                loaded_file = line[5:]
+                if current_script is not None: print('\nScript successfully loaded.\n')
 
-        elif line.lower()[:6] == 'reload':
-            if current_script is None: print("\nERROR: No script loaded.\n"); continue
-            current_script = load_instructions(loaded_file)
-            if current_script is not None: print('\nScript successfully loaded.\n')
+            elif line.lower()[:6] == 'reload':
+                if current_script is None: print("\nERROR: No script loaded.\n"); continue
+                current_script = load_instructions(loaded_file)
+                if current_script is not None: print('\nScript successfully loaded.\n')
 
-        elif line.lower()[:3] == 'run':
-            if current_script is None: print("\nERROR: No script loaded.\n"); continue
-            try: float(line[4:])
-            except ValueError: print("\n ERROR: must supply a delay for 'run'.\n"); continue
-            sleep(float(line[4:]))
-            run_script(current_script)
+            elif line.lower()[:3] == 'run':
+                if current_script is None: print("\nERROR: No script loaded.\n"); continue
+                try: float(line[4:])
+                except ValueError: print("\n ERROR: must supply a delay for 'run'.\n"); continue
+                sleep(float(line[4:]))
+                run_script(current_script)
 
-        elif line.lower()[:5] == 'rerun':
-            try:
-                float(line[6:])
-            except ValueError:
-                print("\n ERROR: must supply a delay for 'rerun'.\n"); continue
-            if current_script is None: print("\nERROR: No script loaded.\n"); continue
-            current_script = load_instructions(loaded_file)
-            if current_script is None: continue #Don't try to run erroneous script
-            print('\nScript successfully loaded.\n')
-            sleep(float(line[6:]))
-            run_script(current_script)
+            elif line.lower()[:5] == 'rerun':
+                try:
+                    float(line[6:])
+                except ValueError:
+                    print("\n ERROR: must supply a delay for 'rerun'.\n"); continue
+                if current_script is None: print("\nERROR: No script loaded.\n"); continue
+                current_script = load_instructions(loaded_file)
+                if current_script is None: continue #Don't try to run erroneous script
+                print('\nScript successfully loaded.\n')
+                sleep(float(line[6:]))
+                run_script(current_script)
 
-        elif line.lower()[:4] == 'time':
-            if current_script is None: print("\nERROR: No script loaded.\n"); continue
-            print(f"\nTotal time of script: {total_time(current_script)}\n")
+            elif line.lower()[:4] == 'time':
+                if current_script is None: print("\nERROR: No script loaded.\n"); continue
+                print(f"\nTotal time of script: {total_time(current_script)}\n")
 
-        elif line.lower().strip() == 'steam_setup':
-            steam_setup()
+            elif line.lower().strip() == 'steam_setup':
+                steam_setup()
 
-        elif line.lower() == 'compiled':
-            print('\n'.join(' '.join((str(i),str(current_script[i]))) for i in range(len(current_script))))
+            elif line.lower() == 'compiled':
+                print('\n'.join(' '.join((str(i),str(current_script[i]))) for i in range(len(current_script))))
 
-        elif line.lower() == 'help':
-            if game.lower() == 'hue': print(helpstrHue)
-            else: print(helpstrGeneral)
+            elif line.lower() == 'help':
+                if game.lower() == 'hue': print(helpstrHue)
+                else: print(helpstrGeneral)
 
-        else: print("\nNo commands of that name.\n")
+            elif line.lower()[:11] == 'debug_level':
+                error_level = int(line.lower()[12:])
+
+            else: print("\nNo commands of that name.\n")
+        except Exception as e:
+            print(f'\n ERROR: Unknown error of type {traceback.format_exc() if error_level else e}\n')
