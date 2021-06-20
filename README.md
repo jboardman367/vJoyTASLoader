@@ -70,6 +70,10 @@ where `time` is measured in ticks if a `tps` was given in the preamble, otherwis
 ### Game-specific functions
 - `wait` (Hue): Will pause execution of the script until Hue becomes controllable. Will abort the script if it takes longer than 10 seconds
 
+## Other programs are not working with my normal controller? What do I do?
+
+If other programs are not working with your normal controllers, that means they are only designed to pick up on the primary controller, which vJoy forces itself to be. To solve this issue, you can use [x360ce](https://www.x360ce.com/) to make your controller work again.
+
 ## Building
 If you want to use the source files for the code, please note that I have made changes to the ReadWriteMemory module from the PyPi release in order to read boolean data as well as 4 byte int data. Also note that the pyvjoy library will only operate in 64-bit python, and includes a dll that the [repo](https://github.com/tidzo/pyvjoy) it is from doesn't provide. 
 Bundling into an .exe: install PyInstaller with pip and do `pyinstaller --onefile --add-binary [some path]\TAS\src\pyvjoy\vJoyInterface.dll;. TASLoader.py` in the command line from inside `src`.
